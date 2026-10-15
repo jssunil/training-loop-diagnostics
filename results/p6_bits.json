@@ -1,0 +1,47 @@
+{
+  "fp32": {
+    "sign": 0,
+    "exponent": -4,
+    "exp_field": 123,
+    "exp_bits": "01111011",
+    "mant_bits": "10011001100110011001101",
+    "first_dropped_bits": "11001100",
+    "bits": "0 01111011 10011001100110011001101",
+    "hex": "0x3DCCCCCD",
+    "stored": 0.10000000149011612,
+    "abs_error": 1.4901161193847657e-09,
+    "rel_error": 1.4901161193847656e-08,
+    "torch_hex": "0x3DCCCCCD",
+    "torch_agrees": true
+  },
+  "bf16": {
+    "sign": 0,
+    "exponent": -4,
+    "exp_field": 123,
+    "exp_bits": "01111011",
+    "mant_bits": "1001101",
+    "first_dropped_bits": "11001100",
+    "bits": "0 01111011 1001101",
+    "hex": "0x3DCD",
+    "stored": 0.10009765625,
+    "abs_error": 9.765625e-05,
+    "rel_error": 0.0009765625,
+    "torch_hex": "0x3DCD",
+    "torch_agrees": true
+  },
+  "fp8_e4m3": {
+    "sign": 0,
+    "exponent": -4,
+    "exp_field": 3,
+    "exp_bits": "0011",
+    "mant_bits": "101",
+    "first_dropped_bits": "11001100",
+    "bits": "0 0011 101",
+    "hex": "0x1D",
+    "stored": 0.1015625,
+    "abs_error": 0.0015625,
+    "rel_error": 0.015625,
+    "torch_hex": "0x1D",
+    "torch_agrees": true
+  }
+}

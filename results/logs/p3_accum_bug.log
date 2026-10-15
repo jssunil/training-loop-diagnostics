@@ -1,0 +1,12 @@
+# p3_accum_bug | 2026-10-15 16:39:15 | {"device": "NVIDIA GeForce RTX 5070 Ti", "torch": "2.7.0+cu128", "cuda": "12.8", "python": "3.13.5", "os": "Windows-11-10.0.26300-SP0", "gpu_duty_limit": 0.6, "gpu_mem_fraction": 0.6}
+
+Worked example: correct 2.6000, average of averages 3.0000 (15.4% too high); with equal lengths both give 3.0000 and 3.0000
+Step-0 gradients: |correct - full|/|full| = 1.21e-07; |bug - full|/|full| = 0.321; cosine(bug, full) = 0.9500
+Control, equal lengths [(16, 128), (16, 128), (16, 128)]: |bug - full|/|full| = 1.02e-07 (the bug hides when every micro-batch holds the same number of tokens)
+Micro-batches per step: [(16, 128), (16, 128), (16, 8)] -> real tokens [2048, 2048, 128]; the short one gets 33% of the vote in the bug but holds 3.0% of the tokens
+full    : train loss (token-weighted, mean of last 50 steps) 2.1230, final val loss 2.1186
+correct : train loss (token-weighted, mean of last 50 steps) 2.1230, final val loss 2.1227
+bug     : train loss (token-weighted, mean of last 50 steps) 2.3899, final val loss 2.3802
+Final val gap bug - correct = +0.2575
+
+# finished in 34.7 s

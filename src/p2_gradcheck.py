@@ -2,7 +2,7 @@
 import torch
 
 from src.data import CONFIG_S, CharData, make_model
-from src.device import env_info, save_json
+from src.device import env_info, save_json, logged
 
 PARAM = "transformer.h.0.attn.c_attn.weight"  # a query weight in block 0
 INDEX = (3, 7)                                # row 3 (output feature), column 7 (input channel)
@@ -50,6 +50,7 @@ def check(dtype, data, x, y, index=INDEX):
     return {"index": list(index), "weight_value": w0, "autograd": g_autograd, "loss": loss.item(), "rows": rows}
 
 
+@logged("p2_gradcheck")
 def run():
     torch.manual_seed(0)
     data = CharData()

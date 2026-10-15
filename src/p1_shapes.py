@@ -3,7 +3,7 @@ import torch
 
 from src import model as nanogpt
 from src.data import CONFIG_S, CharData, make_model
-from src.device import env_info, pick_device, save_json
+from src.device import env_info, pick_device, save_json, logged
 
 B, T = 4, 16  # small numbers, all different from C, nh and hs, so each dimension is easy to see
 
@@ -31,6 +31,7 @@ def meaning(name):
     return MEANING.get(name, "")
 
 
+@logged("p1_shapes")
 def run():
     device = pick_device()
     data = CharData()

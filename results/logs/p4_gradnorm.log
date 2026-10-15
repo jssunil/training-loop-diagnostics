@@ -1,0 +1,8 @@
+# p4_gradnorm | 2026-10-15 16:39:50 | {"device": "NVIDIA GeForce RTX 5070 Ti", "torch": "2.7.0+cu128", "cuda": "12.8", "python": "3.13.5", "os": "Windows-11-10.0.26300-SP0", "gpu_duty_limit": 0.6, "gpu_mem_fraction": 0.6}
+
+[calm] 1500 steps, lr 0.003, seed 5, clip 1.0. Grad norm: median 0.468, max 10.460 at step 3; clip active on 13 of 1500 steps; mean loss of last 50 steps 1.576
+[calm] No event: the grad norm never jumped while the loss stayed normal and then rose.
+[hot] 1500 steps, lr 0.01, seed 6, clip 1.0. Grad norm: median 0.272, max 8.979 at step 1055; clip active on 63 of 1500 steps; mean loss of last 50 steps 2.602
+[hot] 6 event(s). Clearest: step 1365: grad norm 5.809 (18.0x its median 0.322) while the loss 2.628 was still normal; the loss went above its band (2.652) 7 step(s) later, peak 2.657
+
+# finished in 36.0 s

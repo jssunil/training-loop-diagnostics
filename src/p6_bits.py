@@ -7,7 +7,7 @@ from fractions import Fraction
 
 import torch
 
-from src.device import save_json
+from src.device import save_json, logged
 
 FORMATS = {  # name: (exponent bits, mantissa bits, bias)
     "fp32": (8, 23, 127),
@@ -54,6 +54,7 @@ def torch_bits(name):
     return torch.tensor(0.1, dtype=torch.float32).to(torch.float8_e4m3fn).view(torch.uint8).item(), 8
 
 
+@logged("p6_bits")
 def run():
     print("0.1 = 1.6 x 2^-4. In binary, 1.6 = 1.1001 1001 1001 ... (the pattern 1001 repeats without end),")
     print("so no binary format can hold 0.1 exactly. Each format keeps a different number of those bits.\n")

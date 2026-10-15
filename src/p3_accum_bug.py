@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 
 from src.data import CONFIG_S, PAD, CharData, make_model
-from src.device import RESULTS, Governor, autocast, env_info, pick_device, save_json, train_dtype
+from src.device import RESULTS, Governor, autocast, env_info, pick_device, save_json, train_dtype, logged
 
 T = 128
 MICRO = [(16, 128), (16, 128), (16, 8)]  # (sequences, real tokens per sequence): 2048, 2048, 128 tokens
@@ -107,6 +107,7 @@ def train(mode, data, device, dtype):
     return train_curve, val_curve
 
 
+@logged("p3_accum_bug")
 def run(plot=True):
     device = pick_device(); dtype = train_dtype(device)
     data = CharData()

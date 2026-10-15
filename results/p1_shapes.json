@@ -1,0 +1,734 @@
+{
+  "env": {
+    "device": "NVIDIA GeForce RTX 5070 Ti",
+    "torch": "2.7.0+cu128",
+    "cuda": "12.8",
+    "python": "3.13.5",
+    "os": "Windows-11-10.0.26300-SP0",
+    "gpu_duty_limit": 0.6,
+    "gpu_mem_fraction": 0.6
+  },
+  "B": 4,
+  "T": 16,
+  "forward": [
+    [
+      "idx",
+      [
+        4,
+        16
+      ],
+      "B sequences x T token positions; each entry is a character id in [0, V)"
+    ],
+    [
+      "y (targets)",
+      [
+        4,
+        16
+      ],
+      "B x T: the correct next character id for each position (x moved one place right)"
+    ],
+    [
+      "tok_emb",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: one C-number embedding vector for each token"
+    ],
+    [
+      "pos_emb",
+      [
+        16,
+        128
+      ],
+      "T x C: one C-number vector for each position; it is added to every sequence (broadcast over B)"
+    ],
+    [
+      "x0 = tok_emb + pos_emb",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the residual stream that enters block 0"
+    ],
+    [
+      "attn.q",
+      [
+        4,
+        4,
+        16,
+        32
+      ],
+      "B x nh x T x hs: the query of each head, for each position (C = nh x hs)"
+    ],
+    [
+      "attn.k",
+      [
+        4,
+        4,
+        16,
+        32
+      ],
+      "B x nh x T x hs: the key of each head, for each position"
+    ],
+    [
+      "attn.v",
+      [
+        4,
+        4,
+        16,
+        32
+      ],
+      "B x nh x T x hs: the value of each head, for each position"
+    ],
+    [
+      "attn.scores (inside SDPA, not stored)",
+      [
+        4,
+        4,
+        16,
+        16
+      ],
+      "B x nh x T x T: how much position t (row) looks at position s (column); causal, so s <= t"
+    ],
+    [
+      "attn.y_heads",
+      [
+        4,
+        4,
+        16,
+        32
+      ],
+      "B x nh x T x hs: the attention output of each head"
+    ],
+    [
+      "attn.y_merged",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the nh head outputs put side by side again"
+    ],
+    [
+      "block[0] out",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the residual stream after this block (attention + MLP, each with a residual add)"
+    ],
+    [
+      "block[1] out",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the residual stream after this block (attention + MLP, each with a residual add)"
+    ],
+    [
+      "block[2] out",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the residual stream after this block (attention + MLP, each with a residual add)"
+    ],
+    [
+      "block[3] out",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the residual stream after this block (attention + MLP, each with a residual add)"
+    ],
+    [
+      "ln_f out",
+      [
+        4,
+        16,
+        128
+      ],
+      "B x T x C: the residual stream after the last LayerNorm"
+    ],
+    [
+      "logits",
+      [
+        4,
+        16,
+        65
+      ],
+      "B x T x V: one score per vocabulary entry, for the next token at each position"
+    ],
+    [
+      "loss",
+      [],
+      "a scalar (shape ()): the mean cross-entropy over all B x T predictions"
+    ]
+  ],
+  "params": [
+    [
+      "transformer.wte.weight",
+      [
+        65,
+        128
+      ],
+      [
+        65,
+        128
+      ],
+      "V x C: one 128-number vector per character; also the output head (tied)"
+    ],
+    [
+      "transformer.wpe.weight",
+      [
+        128,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      "block_size x C: one vector per position 0..127"
+    ],
+    [
+      "transformer.h.0.ln_1.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.0.ln_1.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.0.attn.c_attn.weight",
+      [
+        384,
+        128
+      ],
+      [
+        384,
+        128
+      ],
+      "3C x C: q, k and v projections stacked (out x in)"
+    ],
+    [
+      "transformer.h.0.attn.c_attn.bias",
+      [
+        384
+      ],
+      [
+        384
+      ],
+      "3C: bias of q, k and v"
+    ],
+    [
+      "transformer.h.0.attn.c_proj.weight",
+      [
+        128,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      "C x C: merges the heads back into the residual stream (out x in)"
+    ],
+    [
+      "transformer.h.0.attn.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.0.ln_2.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.0.ln_2.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.0.mlp.c_fc.weight",
+      [
+        512,
+        128
+      ],
+      [
+        512,
+        128
+      ],
+      "4C x C: MLP expansion (out x in)"
+    ],
+    [
+      "transformer.h.0.mlp.c_fc.bias",
+      [
+        512
+      ],
+      [
+        512
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.0.mlp.c_proj.weight",
+      [
+        128,
+        512
+      ],
+      [
+        128,
+        512
+      ],
+      "C x 4C: MLP contraction (out x in)"
+    ],
+    [
+      "transformer.h.0.mlp.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.1.ln_1.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.1.ln_1.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.1.attn.c_attn.weight",
+      [
+        384,
+        128
+      ],
+      [
+        384,
+        128
+      ],
+      "3C x C: q, k and v projections stacked (out x in)"
+    ],
+    [
+      "transformer.h.1.attn.c_attn.bias",
+      [
+        384
+      ],
+      [
+        384
+      ],
+      "3C: bias of q, k and v"
+    ],
+    [
+      "transformer.h.1.attn.c_proj.weight",
+      [
+        128,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      "C x C: merges the heads back into the residual stream (out x in)"
+    ],
+    [
+      "transformer.h.1.attn.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.1.ln_2.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.1.ln_2.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.1.mlp.c_fc.weight",
+      [
+        512,
+        128
+      ],
+      [
+        512,
+        128
+      ],
+      "4C x C: MLP expansion (out x in)"
+    ],
+    [
+      "transformer.h.1.mlp.c_fc.bias",
+      [
+        512
+      ],
+      [
+        512
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.1.mlp.c_proj.weight",
+      [
+        128,
+        512
+      ],
+      [
+        128,
+        512
+      ],
+      "C x 4C: MLP contraction (out x in)"
+    ],
+    [
+      "transformer.h.1.mlp.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.2.ln_1.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.2.ln_1.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.2.attn.c_attn.weight",
+      [
+        384,
+        128
+      ],
+      [
+        384,
+        128
+      ],
+      "3C x C: q, k and v projections stacked (out x in)"
+    ],
+    [
+      "transformer.h.2.attn.c_attn.bias",
+      [
+        384
+      ],
+      [
+        384
+      ],
+      "3C: bias of q, k and v"
+    ],
+    [
+      "transformer.h.2.attn.c_proj.weight",
+      [
+        128,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      "C x C: merges the heads back into the residual stream (out x in)"
+    ],
+    [
+      "transformer.h.2.attn.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.2.ln_2.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.2.ln_2.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.2.mlp.c_fc.weight",
+      [
+        512,
+        128
+      ],
+      [
+        512,
+        128
+      ],
+      "4C x C: MLP expansion (out x in)"
+    ],
+    [
+      "transformer.h.2.mlp.c_fc.bias",
+      [
+        512
+      ],
+      [
+        512
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.2.mlp.c_proj.weight",
+      [
+        128,
+        512
+      ],
+      [
+        128,
+        512
+      ],
+      "C x 4C: MLP contraction (out x in)"
+    ],
+    [
+      "transformer.h.2.mlp.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.3.ln_1.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.3.ln_1.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.3.attn.c_attn.weight",
+      [
+        384,
+        128
+      ],
+      [
+        384,
+        128
+      ],
+      "3C x C: q, k and v projections stacked (out x in)"
+    ],
+    [
+      "transformer.h.3.attn.c_attn.bias",
+      [
+        384
+      ],
+      [
+        384
+      ],
+      "3C: bias of q, k and v"
+    ],
+    [
+      "transformer.h.3.attn.c_proj.weight",
+      [
+        128,
+        128
+      ],
+      [
+        128,
+        128
+      ],
+      "C x C: merges the heads back into the residual stream (out x in)"
+    ],
+    [
+      "transformer.h.3.attn.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.3.ln_2.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.3.ln_2.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.h.3.mlp.c_fc.weight",
+      [
+        512,
+        128
+      ],
+      [
+        512,
+        128
+      ],
+      "4C x C: MLP expansion (out x in)"
+    ],
+    [
+      "transformer.h.3.mlp.c_fc.bias",
+      [
+        512
+      ],
+      [
+        512
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.h.3.mlp.c_proj.weight",
+      [
+        128,
+        512
+      ],
+      [
+        128,
+        512
+      ],
+      "C x 4C: MLP contraction (out x in)"
+    ],
+    [
+      "transformer.h.3.mlp.c_proj.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "out: one bias per output feature"
+    ],
+    [
+      "transformer.ln_f.weight",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ],
+    [
+      "transformer.ln_f.bias",
+      [
+        128
+      ],
+      [
+        128
+      ],
+      "C: one scale or shift per channel"
+    ]
+  ],
+  "n_params": 818048
+}

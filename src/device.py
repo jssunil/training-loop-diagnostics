@@ -13,7 +13,7 @@ RESULTS = pathlib.Path(__file__).resolve().parent.parent / "results"
 # Dense tensor-core peak (FLOP/s) for the training dtype. These are data-sheet values, not measurements.
 # Key: a substring of torch.cuda.get_device_name().
 PEAK_FLOPS = {
-    "RTX 5070 Ti": (87.9e12, "bf16", "aggregator value (flopper.io), not checked against NVIDIA's whitepaper"),
+    "RTX 5070 Ti": (175.8e12, "bf16", "aggregator dense 16-bit tensor value (flopper.io), not checked against NVIDIA; the same site lists 87.9 for bf16, but this card measures about 96-98 on one 8192x8192 bf16 matmul (see measured_matmul_ceiling), so 87.9 cannot be the ceiling"),
     "RTX 5090": (209.5e12, "bf16", "aggregator value, not checked"),
     "RTX 4090": (165.2e12, "bf16", "NVIDIA Ada whitepaper, FP32 accumulate"),
     "T4": (65e12, "fp16", "NVIDIA T4 data sheet; T4 has no BF16 tensor cores"),
@@ -63,9 +63,9 @@ class Governor:
 
 def pick_device():
     if torch.cuda.is_available():
-        dev = torch.device("cuda")
+        dev = torch.device("cuda", 0)
         if GPU_MEM_FRACTION < 1.0:
-            torch.cuda.set_per_process_memory_fraction(GPU_MEM_FRACTION, dev)
+            torch.cuda.set_per_process_memory_fraction(GPU_MEM_FRACTION, 0)
         return dev
     if getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
         return torch.device("mps")
@@ -112,6 +112,42 @@ def env_info(device):
         "gpu_duty_limit": GPU_DUTY if device.type == "cuda" else None,
         "gpu_mem_fraction": GPU_MEM_FRACTION if device.type == "cuda" else None,
     }
+
+
+class _Tee:
+    def __init__(self, *streams):
+        self.streams = streams
+
+    def write(self, s):
+        for st in self.streams:
+            st.write(s)
+        return len(s)
+
+    def flush(self):
+        for st in self.streams:
+            st.flush()
+
+
+def logged(name):
+    """Decorator for a part's run(): everything it prints also goes to results/logs/<name>.log (overwritten each run)."""
+    import functools
+    import sys
+
+    def wrap(fn):
+        @functools.wraps(fn)
+        def inner(*args, **kwargs):
+            (RESULTS / "logs").mkdir(parents=True, exist_ok=True)
+            with open(RESULTS / "logs" / f"{name}.log", "w", encoding="utf-8") as f:
+                f.write(f"# {name} | {time.strftime('%Y-%m-%d %H:%M:%S')} | {json.dumps(env_info(pick_device()))}\n\n")
+                old, t0 = sys.stdout, time.perf_counter()
+                sys.stdout = _Tee(old, f)
+                try:
+                    return fn(*args, **kwargs)
+                finally:
+                    sys.stdout = old
+                    f.write(f"\n# finished in {time.perf_counter() - t0:.1f} s\n")
+        return inner
+    return wrap
 
 
 def save_json(name, obj):

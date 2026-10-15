@@ -4,7 +4,9 @@
     "torch": "2.7.0+cu128",
     "cuda": "12.8",
     "python": "3.13.5",
-    "os": "Windows-11-10.0.26300-SP0"
+    "os": "Windows-11-10.0.26300-SP0",
+    "gpu_duty_limit": 0.6,
+    "gpu_mem_fraction": 0.6
   },
   "dtype": "torch.bfloat16",
   "micro": [

@@ -1,0 +1,94 @@
+{
+  "env": {
+    "device": "NVIDIA GeForce RTX 5070 Ti",
+    "torch": "2.7.0+cu128",
+    "cuda": "12.8",
+    "python": "3.13.5",
+    "os": "Windows-11-10.0.26300-SP0",
+    "gpu_duty_limit": 0.6,
+    "gpu_mem_fraction": 0.6
+  },
+  "dtype": "torch.bfloat16",
+  "B": 64,
+  "T": 256,
+  "N": 10672512,
+  "flops_per_token_6N": 64035072,
+  "flops_per_token_attn": 7077888,
+  "peak_flops": 175800000000000.0,
+  "peak_note": "aggregator dense 16-bit tensor value (flopper.io), not checked against NVIDIA; the same site lists 87.9 for bf16, but this card measures about 96-98 on one 8192x8192 bf16 matmul (see measured_matmul_ceiling), so 87.9 cannot be the ceiling",
+  "eager": {
+    "seconds_per_step": 0.02885319599976356,
+    "tokens_per_second": 567840.0410177874,
+    "note": "per-step sync; rests between steps are excluded from the time"
+  },
+  "achieved_flops": 40380786123296.27,
+  "mfu": 0.2296973044556102,
+  "mfu_without_attention": 0.20683548299804874,
+  "mfu_nanogpt_estimate": 0.2296973044556102,
+  "measured_matmul_ceiling": 96901829459543.12,
+  "mfu_vs_measured_ceiling": 0.4167185113894615,
+  "profile": {
+    "gpu_busy_fraction": 0.9258798325059148,
+    "kernel_launches_per_step": 438.0,
+    "groups_pct": {
+      "matmul (gemm)": 53.49964034555382,
+      "attention (sdpa / flash)": 9.71130465772381,
+      "optimizer (adam)": 4.973593353271328,
+      "layernorm / softmax / gelu / cross-entropy": 16.6948027193669,
+      "other elementwise / copies": 15.12065892408415
+    },
+    "top_kernels": [
+      {
+        "name": "_ZN7cutlass7Kernel2I68cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x128_32x3_nn_align8",
+        "pct": 18.16406094992504,
+        "calls": 120
+      },
+      {
+        "name": "_ZN7cutlass7Kernel2I68cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x128_32x3_tn_align8",
+        "pct": 9.715270650697171,
+        "calls": 60
+      },
+      {
+        "name": "_ZN7cutlass7Kernel2I67cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_256x64_32x4_nt_align8E",
+        "pct": 8.231512949153888,
+        "calls": 30
+      },
+      {
+        "name": "_Z52fmha_cutlassB_bf16_aligned_64x64_k64_seqaligned_sm80N22PyTorchMemEffAttention23Attenti",
+        "pct": 7.485597755201063,
+        "calls": 30
+      },
+      {
+        "name": "_ZN7cutlass7Kernel2I67cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_64x256_32x4_tn_align8E",
+        "pct": 6.505189196221843,
+        "calls": 60
+      },
+      {
+        "name": "_ZN7cutlass7Kernel2I68cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_128x128_32x4_nt_align8",
+        "pct": 5.4122943188007815,
+        "calls": 60
+      },
+      {
+        "name": "_ZN7cutlass7Kernel2I67cutlass_80_tensorop_bf16_s16816gemm_relu_bf16_64x256_32x4_nt_align8E",
+        "pct": 5.073136699079223,
+        "calls": 30
+      },
+      {
+        "name": "_ZN2at6native52_GLOBAL__N__aed75f65_19_fused_adamw_impl_cu_8b44fa2325multi_tensor_apply_ke",
+        "pct": 4.503636376600516,
+        "calls": 15
+      },
+      {
+        "name": "_ZN2at6native53_GLOBAL__N__87a90936_20_layer_norm_kernel_cu_3ff0b71f33GammaBetaBackwardCUD",
+        "pct": 4.266750371689139,
+        "calls": 65
+      },
+      {
+        "name": "_ZN2at6native29vectorized_elementwise_kernelILi8EZZZNS0_26GeluBackwardCUDAKernelImplERNS_1",
+        "pct": 3.4054872180230933,
+        "calls": 30
+      }
+    ]
+  },
+  "compiled_error": "TritonMissing: Cannot find a working triton installation. Either the package is not installed or it is too old. More information on installing Triton can be found at: https://github.com/triton-lang/triton"
+}

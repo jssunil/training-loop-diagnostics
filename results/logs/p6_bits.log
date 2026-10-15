@@ -1,0 +1,12 @@
+# p6_bits | 2026-10-15 16:40:34 | {"device": "NVIDIA GeForce RTX 5070 Ti", "torch": "2.7.0+cu128", "cuda": "12.8", "python": "3.13.5", "os": "Windows-11-10.0.26300-SP0", "gpu_duty_limit": 0.6, "gpu_mem_fraction": 0.6}
+
+0.1 = 1.6 x 2^-4. In binary, 1.6 = 1.1001 1001 1001 ... (the pattern 1001 repeats without end),
+so no binary format can hold 0.1 exactly. Each format keeps a different number of those bits.
+
+| format | sign | exponent field (e + bias) | mantissa | hex | stored value | relative error | torch agrees |
+|---|---|---|---|---|---|---|---|
+| fp32 | 0 | 01111011 (-4+127=123) | 10011001100110011001101 | 0x3DCCCCCD | 0.100000001490116 | 1.49e-08 | True (0x3DCCCCCD) |
+| bf16 | 0 | 01111011 (-4+127=123) | 1001101 | 0x3DCD | 0.10009765625 | 9.77e-04 | True (0x3DCD) |
+| fp8_e4m3 | 0 | 0011 (-4+7=3) | 101 | 0x1D | 0.1015625 | 1.56e-02 | True (0x1D) |
+
+# finished in 0.0 s

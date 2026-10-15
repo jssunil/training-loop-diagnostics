@@ -10,7 +10,7 @@ import time
 import torch
 
 from src.data import CONFIG_SHAKESPEARE_CHAR, CharData, make_model
-from src.device import GPU_DUTY, Governor, autocast, env_info, peak_flops, pick_device, save_json, train_dtype
+from src.device import GPU_DUTY, Governor, autocast, env_info, peak_flops, pick_device, save_json, train_dtype, logged
 
 B = 64            # nanoGPT shakespeare_char batch size
 WARMUP, TIMED = 10, 50
@@ -85,16 +85,18 @@ def profile(step, device):
             with gov.step():
                 step(i)
     wall = gov.busy  # step time only; the rests between steps are excluded
-    kernels = [e for e in prof.key_averages() if e.device_type.name == "CUDA" and e.self_device_time_total > 0]
+    # "Name#Name" entries are profiler annotation ranges on the GPU timeline, not kernels; skip them (no double count).
+    kernels = [e for e in prof.key_averages()
+               if e.device_type.name == "CUDA" and e.self_device_time_total > 0 and "#" not in e.key]
     total = sum(e.self_device_time_total for e in kernels)
     groups = {"matmul (gemm)": 0.0, "attention (sdpa / flash)": 0.0, "optimizer (adam)": 0.0,
               "layernorm / softmax / gelu / cross-entropy": 0.0, "other elementwise / copies": 0.0}
     for e in kernels:
         k = e.key.lower()
-        if any(s in k for s in ("gemm", "cutlass", "sm80_xmma", "sm90", "sm100", "sm120", "ampere_", "matmul")):
-            groups["matmul (gemm)"] += e.self_device_time_total
-        elif any(s in k for s in ("flash", "fmha", "attention", "efficient")):
+        if any(s in k for s in ("flash", "fmha", "attention", "efficient")):  # first: fmha_cutlass* is attention
             groups["attention (sdpa / flash)"] += e.self_device_time_total
+        elif any(s in k for s in ("gemm", "cutlass", "sm80_xmma", "sm90", "sm100", "sm120", "ampere_", "matmul")):
+            groups["matmul (gemm)"] += e.self_device_time_total
         elif "adam" in k or "foreach" in k:
             groups["optimizer (adam)"] += e.self_device_time_total
         elif any(s in k for s in ("layer_norm", "softmax", "gelu", "nll", "cross_entropy", "log_softmax")):
@@ -109,6 +111,7 @@ def profile(step, device):
                             for e in top]}
 
 
+@logged("p5_mfu")
 def run():
     device = pick_device(); dtype = train_dtype(device)
     data = CharData()

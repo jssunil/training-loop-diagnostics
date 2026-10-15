@@ -5,16 +5,19 @@ The grad norm is the L2 norm of all gradients together, measured BEFORE clipping
 
 An "event" is a step s where the grad norm is more than K_NORM times its median over the previous WINDOW steps,
 while the loss at s is still inside its normal band, and the loss rises above its band within the next LEAD steps.
-If the run has no natural event, the script says so. It does not invent one.
+Two real runs (no injected data):
+  calm : LR 3e-3, a stable run. If it has no event, the script says so. It does not invent one.
+  hot  : LR 1e-2, too high for this model. Here the norm jumps and the loss follows a few steps later.
 """
 import statistics
 
 import torch
 
 from src.data import CONFIG_S, CharData, make_model
-from src.device import RESULTS, Governor, autocast, env_info, pick_device, save_json, train_dtype
+from src.device import RESULTS, Governor, autocast, env_info, pick_device, save_json, train_dtype, logged
 
 STEPS, LR, CLIP, B, T = 1500, 3e-3, 1.0, 32, 128
+HOT_LR, HOT_SEED = 1e-2, 6
 WINDOW, K_NORM, LEAD = 50, 3.0, 10
 
 
@@ -60,39 +63,51 @@ def find_events(loss_log, norm_log):
     return events
 
 
-def run(plot=True):
-    device = pick_device(); dtype = train_dtype(device)
-    data = CharData()
-    loss_log, norm_log = train_and_log(data, device, dtype)
+def one_run(name, data, device, dtype, lr, seed):
+    loss_log, norm_log = train_and_log(data, device, dtype, lr=lr, seed=seed)
     events = find_events(loss_log, norm_log)
-    print(f"{STEPS} steps, lr {LR}, clip {CLIP}. Grad norm: median {statistics.median(norm_log):.3f}, "
+    print(f"[{name}] {STEPS} steps, lr {lr}, seed {seed}, clip {CLIP}. Grad norm: median {statistics.median(norm_log):.3f}, "
           f"max {max(norm_log):.3f} at step {norm_log.index(max(norm_log))}; "
-          f"clip active on {sum(n > CLIP for n in norm_log)} of {STEPS} steps")
+          f"clip active on {sum(n > CLIP for n in norm_log)} of {STEPS} steps; "
+          f"mean loss of last 50 steps {statistics.mean(loss_log[-50:]):.3f}")
     if events:
         e = max(events, key=lambda q: q["norm_ratio"])
-        print(f"{len(events)} event(s). Clearest: step {e['step']}: grad norm {e['norm']:.3f} "
+        print(f"[{name}] {len(events)} event(s). Clearest: step {e['step']}: grad norm {e['norm']:.3f} "
               f"({e['norm_ratio']:.1f}x its median {e['norm_median_before']:.3f}) while the loss {e['loss_at_step']:.3f} "
               f"was still normal; the loss went above its band ({e['loss_band']:.3f}) {e['loss_rises_after_steps']} "
               f"step(s) later, peak {e['loss_peak_after']:.3f}")
     else:
         e = None
-        print("No natural event in this run: the grad norm never jumped while the loss stayed normal and then rose.")
-    out = {"env": env_info(device), "dtype": str(dtype), "steps": STEPS, "lr": LR, "clip": CLIP,
-           "rule": {"window": WINDOW, "k_norm": K_NORM, "lead": LEAD}, "events": events, "clearest": e,
-           "loss": loss_log, "grad_norm": norm_log}
+        print(f"[{name}] No event: the grad norm never jumped while the loss stayed normal and then rose.")
+    return {"lr": lr, "seed": seed, "events": events, "clearest": e, "loss": loss_log, "grad_norm": norm_log}
+
+
+@logged("p4_gradnorm")
+def run(plot=True):
+    device = pick_device(); dtype = train_dtype(device)
+    data = CharData()
+    runs = {"calm": one_run("calm", data, device, dtype, LR, 5),
+            "hot": one_run("hot", data, device, dtype, HOT_LR, HOT_SEED)}
+    out = {"env": env_info(device), "dtype": str(dtype), "steps": STEPS, "clip": CLIP,
+           "rule": {"window": WINDOW, "k_norm": K_NORM, "lead": LEAD}, "runs": runs}
     save_json("p4_gradnorm.json", out)
     if plot:
-        plot_traces(loss_log, norm_log, e)
+        plot_traces(runs)
     return out
 
 
-def plot_traces(loss_log, norm_log, e):
+def plot_traces(runs):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, 2 if e else 1, figsize=(13 if e else 8, 4.5), squeeze=False)
-    spans = [(0, len(loss_log))] + ([(max(0, e["step"] - 40), e["step"] + 40)] if e else [])
-    for ax, (a, b) in zip(axes[0], spans):
+    panels = []  # (run name, run, start, end)
+    for name, r in runs.items():
+        panels.append((name, r, 0, len(r["loss"])))
+        if r["clearest"]:
+            s = r["clearest"]["step"]; panels.append((name, r, max(0, s - 40), s + 40))
+    fig, axes = plt.subplots(1, len(panels), figsize=(5.5 * len(panels), 4.5), squeeze=False)
+    for ax, (name, r, a, b) in zip(axes[0], panels):
+        loss_log, norm_log, e = r["loss"], r["grad_norm"], r["clearest"]
         xs = range(a, b)
         ax.plot(xs, loss_log[a:b], color="tab:blue", lw=1, label="loss")
         ax.set_xlabel("step"); ax.set_ylabel("loss", color="tab:blue")
@@ -103,8 +118,8 @@ def plot_traces(loss_log, norm_log, e):
         if e and a <= e["step"] < b:
             ax.axvline(e["step"], color="k", ls="--", lw=1)
             ax.axvline(e["step"] + e["loss_rises_after_steps"], color="gray", ls="--", lw=1)
-        ax.set_title("whole run" if a == 0 else f"zoom: norm jumps at step {e['step']}, "
-                                                 f"loss follows {e['loss_rises_after_steps']} step(s) later")
+        ax.set_title(f"{name} (lr {r['lr']}): whole run" if a == 0 else
+                     f"{name} zoom: norm jumps at step {e['step']},\nloss follows {e['loss_rises_after_steps']} step(s) later")
     fig.tight_layout()
     RESULTS.mkdir(exist_ok=True)
     fig.savefig(RESULTS / "p4_gradnorm.png", dpi=120)

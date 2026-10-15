@@ -4,7 +4,9 @@
     "torch": "2.7.0+cu128",
     "cuda": "12.8",
     "python": "3.13.5",
-    "os": "Windows-11-10.0.26300-SP0"
+    "os": "Windows-11-10.0.26300-SP0",
+    "gpu_duty_limit": null,
+    "gpu_mem_fraction": null
   },
   "param": "transformer.h.0.attn.c_attn.weight",
   "index": [

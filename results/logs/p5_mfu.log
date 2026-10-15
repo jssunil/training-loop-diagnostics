@@ -1,0 +1,16 @@
+# p5_mfu | 2026-10-15 16:40:26 | {"device": "NVIDIA GeForce RTX 5070 Ti", "torch": "2.7.0+cu128", "cuda": "12.8", "python": "3.13.5", "os": "Windows-11-10.0.26300-SP0", "gpu_duty_limit": 0.6, "gpu_mem_fraction": 0.6}
+
+GPU duty limit 60% (rests between steps are not counted in any timing)
+Device NVIDIA GeForce RTX 5070 Ti, dtype torch.bfloat16, N = 10,672,512 (non-embedding), FLOPs/token = 6N 64,035,072 + attention 7,077,888
+Eager: 567,840 tokens/s, 28.9 ms/step, 40.38 TFLOP/s of model work
+MFU = 23.0% (without attention 20.7%; nanoGPT estimate_mfu 23.0%) against peak 175.8 TFLOP/s [aggregator dense 16-bit tensor value (flopper.io), not checked against NVIDIA; the same site lists 87.9 for bf16, but this card measures about 96-98 on one 8192x8192 bf16 matmul (see measured_matmul_ceiling), so 87.9 cannot be the ceiling]
+Measured 8192x8192 matmul ceiling: 96.9 TFLOP/s; model work is 41.7% of it
+GPU busy 93% of wall time; 438 kernel launches per step
+  matmul (gemm)                                  53.5% of GPU time
+  attention (sdpa / flash)                        9.7% of GPU time
+  optimizer (adam)                                5.0% of GPU time
+  layernorm / softmax / gelu / cross-entropy     16.7% of GPU time
+  other elementwise / copies                     15.1% of GPU time
+torch.compile failed: TritonMissing: Cannot find a working triton installation. Either the package is not installed or it is too old. More information on installing Triton can be found at: https://github.com/triton-lang/triton
+
+# finished in 8.1 s
